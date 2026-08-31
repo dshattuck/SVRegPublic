@@ -29,7 +29,6 @@ if [ -z "$BrainSuiteMCR" ]; then
   fi
 fi
 
-
 read -d '' usage <<EOF
 
   clean_intermediate_files : clean intermediate files (svreg)

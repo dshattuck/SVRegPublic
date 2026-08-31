@@ -3,7 +3,7 @@
 exe_name=$0
 exe_dir=`dirname "$0"`
 
-# If MCR R2015a is installed in a non-default location, define correct path 
+# If MCR R2025b is installed in a non-default location, define correct path 
 # on next line and uncomment it (remove the leading "#")
 #BrainSuiteMCR="/path/to/your/MCR";
 
