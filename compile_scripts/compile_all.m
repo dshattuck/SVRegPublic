@@ -30,7 +30,7 @@ try
         for i = 1:nargin
             if strcmp(varargin{i}, '--package') && i+1 <= nargin
                 package = true;
-                svreg_version = varargin{i+1};
+                svreg_version_str = varargin{i+1};
                 %svreg_build = varargin{i+2};
 
                 i = i + 2; %#ok
@@ -49,10 +49,30 @@ try
         end
     end
     
-    if exist('svreg_version', 'var')
-        set_version(svreg_version);
+    if exist('svreg_version_str', 'var')        
+        set_version(svreg_version_str);
+
+        idx = strfind(svreg_version_str, '_');
+        if isempty(idx) || idx(end) == strlength(svreg_version_str)
+            svreg_info.version=svreg_version_str(1:end-4);
+            svreg_info.build=svreg_version_str(end-3:end)  ;          
+            svreg_info.versstr=svreg_version_str;    
+            fprintf(1,'using old build number scheme:\n')
+            disp(svreg_info)
+        else
+            % Success case using substring extraction
+            lastIdx = idx(end);
+            svreg_info.version=extractBefore(svreg_version_str, lastIdx);
+            svreg_info.build=extractAfter(svreg_version_str, lastIdx);
+            svreg_info.versstr=svreg_version_str;
+            fprintf(1,'using git SHA:\n');
+            disp(svreg_info)
+        end          
     end
-    
+    disp(svreg_info)
+
+    set_version([svreg_info.version,'(build#',svreg_info.build,')']);
+
     if compile
         restoredefaultpath;
         pp=pwd;
@@ -88,11 +108,11 @@ try
     if package
         disp('Packaging...');
         if ispc
-            package_files_pc(svreg_version, atlases);
+            package_files_pc(svreg_info, atlases);
         elseif ismac
-            package_files_mac(svreg_version, atlases);
+            package_files_mac(svreg_info, atlases);
         else
-            package_files_linux(svreg_version, atlases);
+            package_files_linux(svreg_info, atlases);
         end
         cleanup();
         disp('Packing complete');
@@ -105,9 +125,6 @@ end
  
 
 function set_version(svreg_version)
-
-svreg_version=[svreg_version(1:end-4),'(build#',svreg_version(end-3:end),')'];
-
 version_files = {
     ['..' filesep 'src' filesep 'svreg.m'], ...
     ['..' filesep 'src' filesep 'svreg_label_surf_hemi.m'], ...
@@ -161,8 +178,8 @@ fclose(fid);
 end
 
 
-function package_files_pc(svreg_version, atlases)
-[workdir bindir] = setup_package(svreg_version, atlases);
+function package_files_pc(svreg_info, atlases)
+[workdir bindir] = setup_package(svreg_info, atlases);
 
 copyfile('../scripts/svreg_runall.cmd', [bindir filesep 'svreg_runall.cmd']);
 copyfile('../scripts/svreg.cmd', [bindir filesep 'svreg.cmd']);
@@ -198,8 +215,8 @@ rmdir(workdir, 's');
 end
 
 
-function package_files_mac(svreg_version, atlases)
-[workdir bindir] = setup_package(svreg_version, atlases);
+function package_files_mac(svreg_info, atlases)
+[workdir bindir] = setup_package(svreg_info, atlases);
 
 copyfile('svreg.app', [bindir filesep 'svreg.app']);
 copyfile('svreg_label_surf_hemi.app', [bindir filesep 'svreg_label_surf_hemi.app']);
@@ -264,8 +281,8 @@ rmdir(workdir, 's');
 end
 
 
-function package_files_linux(svreg_version, atlases)
-[workdir bindir] = setup_package(svreg_version, atlases);
+function package_files_linux(svreg_info, atlases)
+[workdir bindir] = setup_package(svreg_info, atlases);
 
 copyfile('svreg', [bindir filesep 'svreg']);
 copyfile('svreg_label_surf_hemi', [bindir filesep 'svreg_label_surf_hemi']);
@@ -328,14 +345,13 @@ rmdir(workdir, 's');
 end
 
 
-function [directory, bin_directory] = setup_package(svreg_version, atlases)
-
-svreg_version=[svreg_version(1:end-4),'_build',svreg_version(end-3:end)];
-svreg_string = strrep(num2str(svreg_version), '.', 'p');
-
-directory =  sprintf('svreg_%s_%s', svreg_string, get_platform());
+function [directory, bin_directory] = setup_package(svreg_info, atlases)
+svreg_string = strrep(num2str(svreg_info.version), '.', 'p');    
+directory =  sprintf('svreg_%s_build_%s_%s', svreg_string, svreg_info.build, get_platform());
+disp(directory)
 bin_directory = [directory filesep 'bin'];
 %rcc_directory = [directory filesep 'rcc'];
+disp(bin_directory)
 
 mkdir(directory);
 mkdir(bin_directory);
@@ -352,7 +368,7 @@ for ii = 1:length(atlases)
     copyfile(['..' filesep atlas], atlas_directory);
 end
 
-create_manifest(svreg_version, atlases, [directory filesep 'svregmanifest.xml']);
+create_manifest(svreg_info, atlases, [directory filesep 'svregmanifest.xml']);
 
 if ispc
     line_ending = 'CRLF';
@@ -367,8 +383,8 @@ set_line_endings([directory filesep 'README.md'], line_ending);
 end
 
 
-function create_manifest(svreg_version, atlases, filename)
-svreg_version = num2str(svreg_version);
+function create_manifest(svreg_info, atlases, filename)
+svreg_version = num2str(svreg_info.version);
 compile_date = datestr(now, 'yyyy-mm-dd');
 mcr_version = get_mcr_version();
 platform = get_platform();
@@ -395,7 +411,7 @@ manifest = sprintf(...
     '\t<minimumbrainsuiteversion>14a</minimumbrainsuiteversion>\n'...
     '\t<platform>%s</platform>\n'...
     '%s'...
-    '</svregmanifest>'], svreg_version(1:end-4-6),svreg_version(end-3:end) , compile_date, mcr_version, platform, atlases_xml);
+    '</svregmanifest>'], svreg_info.version,svreg_info.build, compile_date, mcr_version, platform, atlases_xml);
 
 fid = fopen(filename, 'w');
 fprintf(fid, manifest);

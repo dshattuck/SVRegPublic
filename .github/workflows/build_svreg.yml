@@ -1,7 +1,11 @@
 name: Build SVReg on GitHub Runner
 run-name: Build SVReg by @${{ github.actor }}
 
-on: [workflow_dispatch, push]
+on:
+  workflow_dispatch:
+  push:
+  release:
+
 env:
   DEV_VERSION: 26a_dev
   REF_NAME: ${{ github.ref_name }}  
@@ -66,7 +70,7 @@ jobs:
           FILENAME=svreg_${{ env.VERSION }}_build_${LOCAL_SHA}_${{ matrix.suffix }}
           echo "SHORT_SHA=${LOCAL_SHA}" >> $GITHUB_ENV
           echo "PackageFile=${FILENAME}" >> $GITHUB_ENV          
-          echo "Package=${{ github.workspace }}/packaging_tools/${FILENAME}" >> $GITHUB_ENV
+          echo "Package=${{ github.workspace }}/compile_scripts/${FILENAME}" >> $GITHUB_ENV
 
       - name: Set up MATLAB
         uses: matlab-actions/setup-matlab@v3
@@ -125,32 +129,38 @@ jobs:
         uses: matlab-actions/run-command@v3
         with:
           startup-options: -sd compile_scripts
-          command: "compile_all --package ${{ env.VERSION }}${{ env.SHORT_SHA }}"  
+          command: "compile_all --package ${{ env.VERSION }}_${{ env.SHORT_SHA }}"  
 
-      # - name: Install Apple Certificates
-      #   if: runner.os == 'macOS'
-      #   id: import_certs
-      #   uses: apple-actions/import-codesign-certs@v7
-      #   with:
-      #     p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
-      #     p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+      - name: check build
+        shell: bash
+        run: |
+          echo -------- compile_scripts --------
+          ls -lrt compile_scripts
+
+      - name: Install Apple Certificates
+        if: runner.os == 'macOS'
+        id: import_certs
+        uses: apple-actions/import-codesign-certs@v7
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
           
-      # - name: Execute Apple Code Signing & DMG Packaging
-      #   if: runner.os == 'macOS'
-      #   shell: bash
-      #   env:
-      #     MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
-      #     MACOS_NOTARIZATION_APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
-      #     MACOS_NOTARIZATION_PWD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
-      #     MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
-      #     MACOS_DEVELOPER_ID: ${{ secrets.MACOS_DEVELOPER_ID }}
-      #   run: |
-      #     FILENAME=${{ env.PackageFile }} 
-      #     DMGFILE=${FILENAME%.tar.gz}_signed.dmg  
-      #     DMGPATH="${{ github.workspace }}/$DMGFILE"   
-      #     ./packaging_tools/apple_codesigning.sh "${{ env.Package }}" "${{ env.VERSION }}_build_${{ env.SHORT_SHA }}" "$DMGPATH"
-      #     echo "PackageFile=${DMGFILE}" >> $GITHUB_ENV          
-      #     echo "Package=${DMGPATH}" >> $GITHUB_ENV
+      - name: Execute Apple Code Signing & DMG Packaging
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          MACOS_NOTARIZATION_APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+          MACOS_NOTARIZATION_PWD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
+          MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+          MACOS_DEVELOPER_ID: ${{ secrets.MACOS_DEVELOPER_ID }}
+        run: |
+          FILENAME=${{ env.PackageFile }} 
+          DMGFILE=${FILENAME%.tar.gz}_signed.dmg  
+          DMGPATH="${{ github.workspace }}/$DMGFILE"   
+          ./compile_scripts/apple_codesigning.sh "${{ env.Package }}" "${{ env.VERSION }}_build_${{ env.SHORT_SHA }}" "$DMGPATH"
+          echo "PackageFile=${DMGFILE}" >> $GITHUB_ENV          
+          echo "Package=${DMGPATH}" >> $GITHUB_ENV
 
       - name: Save Build as Artifact
         if: github.event_name != 'release'
@@ -167,7 +177,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "${{ env.Package }}"
-          tag: ${{ env.VERSION }}        
+          tag: "v${{ env.VERSION }}"
           allowUpdates: true
 
       - name: Go out to clean again
@@ -178,36 +188,36 @@ jobs:
           rm -rf $GITHUB_WORKSPACE/.* 2>/dev/null || true
 
   # This job executes alone ONLY after all 4 matrix compilations finish successfully
-  update_release_notes:
-    name: Update Production Release Description
-    needs: build                          # Forces this job to wait for your compilation job to finish
-    if: github.event_name == 'release'     # Only run this for true official release events
-    runs-on: ubuntu-latest
-    permissions: write-all
-    steps:
-      - name: Publish Release Notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Authenticates the native gh CLI engine
-          TAG_NAME: ${{ github.ref_name }}
-        run: |
-          CLEAN_VER="${TAG_NAME#v}"
-          MACBADGE="[![MACOS](https://img.shields.io/static/v1?label=Download&message=macOS%20Signed&color=000000&style=for-the-badge&logo=apple&logoColor=white)]"
-          LINBADGE="[![LINUX](https://img.shields.io/static/v1?label=Download&message=Linux%20x64&color=FCC624&style=for-the-badge&logo=linux&logoColor=black)]"
-          WINBADGE="[![WINDOWS](https://img.shields.io/static/v1?label=Download&message=Windows%20x64&color=0078D4&style=for-the-badge&logo=windows&logoColor=white)]"
+  # update_release_notes:
+  #   name: Update Production Release Description
+  #   needs: build                          # Forces this job to wait for your compilation job to finish
+  #   if: github.event_name == 'release'     # Only run this for true official release events
+  #   runs-on: ubuntu-latest
+  #   permissions: write-all
+  #   steps:
+  #     - name: Publish Release Notes
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Authenticates the native gh CLI engine
+  #         TAG_NAME: ${{ github.ref_name }}
+  #       run: |
+  #         CLEAN_VER="${TAG_NAME#v}"
+  #         MACBADGE="[![MACOS](https://img.shields.io/static/v1?label=Download&message=macOS%20Signed&color=000000&style=for-the-badge&logo=apple&logoColor=white)]"
+  #         LINBADGE="[![LINUX](https://img.shields.io/static/v1?label=Download&message=Linux%20x64&color=FCC624&style=for-the-badge&logo=linux&logoColor=black)]"
+  #         WINBADGE="[![WINDOWS](https://img.shields.io/static/v1?label=Download&message=Windows%20x64&color=0078D4&style=for-the-badge&logo=windows&logoColor=white)]"
 
-          echo "Compiling Markdown text block for Release ${TAG_NAME}..."
+  #         echo "Compiling Markdown text block for Release ${TAG_NAME}..."
           
 
-          read -r -d '' MARKDOWN_BODY <<EOF
-          ## Surface-constrained Volume Registration (SVReg) {CLEAN_VER} - Release Notes
+  #         read -r -d '' MARKDOWN_BODY <<EOF
+  #         ## Surface-constrained Volume Registration (SVReg) {CLEAN_VER} - Release Notes
                   
-          ### Releases                    
-          * **Windows (x64):** ${WINBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_win64.zip)
-          * **Linux (x64):** ${LINBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_linux.tar.gz)
-          * **macOS Apple Silicon (ARM64 DMG):** ${MACBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_maca64.dmg)
-          * **macOS Intel (x64 DMG):** ${MACBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_maci64.dmg)
+  #         ### Releases                    
+  #         * **Windows (x64):** ${WINBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_win64.zip)
+  #         * **Linux (x64):** ${LINBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_linux.tar.gz)
+  #         * **macOS Apple Silicon (ARM64 DMG):** ${MACBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_maca64.dmg)
+  #         * **macOS Intel (x64 DMG):** ${MACBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_maci64.dmg)
           
-          EOF
+  #         EOF
           
-          echo "Updating release page on GitHub..."
-          gh release edit "$TAG_NAME" --notes "$MARKDOWN_BODY"
+  #         echo "Updating release page on GitHub..."
+  #         gh release edit "$TAG_NAME" --notes "$MARKDOWN_BODY"
