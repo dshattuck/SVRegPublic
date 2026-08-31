@@ -87,6 +87,7 @@ jobs:
         if: runner.os == 'Windows'
         working-directory: 3rdParty
         run: |
+          mkdir -d AIR_bin
           cl.exe /Fe:AIR_bin\ warp_points.cpp lib\win64\RPW_x64_MT.lib
           cl.exe /Fe:AIR_bin\ warp_coord_vol.cpp lib\win64\RPW_x64_MT.lib
   
