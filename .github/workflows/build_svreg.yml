@@ -121,7 +121,7 @@ jobs:
           command: compile_mex
           
       - name: compile SVReg
-        uses: matlab-actions/run-command@v2
+        uses: matlab-actions/run-command@v3
         with:
           startup-options: -sd compile_scripts
           command: "compile_all --package ${{ env.VERSION }}${{ env.SHORT_SHA }}"  
