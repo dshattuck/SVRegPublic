@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
   push:
   release:
+
 env:
   DEV_VERSION: 26a_dev
   REF_NAME: ${{ github.ref_name }}  
@@ -130,6 +131,13 @@ jobs:
           startup-options: -sd compile_scripts
           command: "compile_all --package ${{ env.VERSION }}_${{ env.SHORT_SHA }}"  
 
+      - name: check build
+        run: |
+          echo -------- compile_scripts --------
+          ls -lrt compile_scripts
+          echo --------
+          ls -l ${{ env.Package }}
+          
       # - name: Install Apple Certificates
       #   if: runner.os == 'macOS'
       #   id: import_certs
