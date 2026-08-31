@@ -137,30 +137,30 @@ jobs:
           echo -------- compile_scripts --------
           ls -lrt compile_scripts
 
-      # - name: Install Apple Certificates
-      #   if: runner.os == 'macOS'
-      #   id: import_certs
-      #   uses: apple-actions/import-codesign-certs@v7
-      #   with:
-      #     p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
-      #     p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+      - name: Install Apple Certificates
+        if: runner.os == 'macOS'
+        id: import_certs
+        uses: apple-actions/import-codesign-certs@v7
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
+          p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
           
-      # - name: Execute Apple Code Signing & DMG Packaging
-      #   if: runner.os == 'macOS'
-      #   shell: bash
-      #   env:
-      #     MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
-      #     MACOS_NOTARIZATION_APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
-      #     MACOS_NOTARIZATION_PWD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
-      #     MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
-      #     MACOS_DEVELOPER_ID: ${{ secrets.MACOS_DEVELOPER_ID }}
-      #   run: |
-      #     FILENAME=${{ env.PackageFile }} 
-      #     DMGFILE=${FILENAME%.tar.gz}_signed.dmg  
-      #     DMGPATH="${{ github.workspace }}/$DMGFILE"   
-      #     ./compile_scripts/apple_codesigning.sh "${{ env.Package }}" "${{ env.VERSION }}_build_${{ env.SHORT_SHA }}" "$DMGPATH"
-      #     echo "PackageFile=${DMGFILE}" >> $GITHUB_ENV          
-      #     echo "Package=${DMGPATH}" >> $GITHUB_ENV
+      - name: Execute Apple Code Signing & DMG Packaging
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          MACOS_NOTARIZATION_APPLE_ID: ${{ secrets.MACOS_NOTARIZATION_APPLE_ID }}
+          MACOS_NOTARIZATION_PWD: ${{ secrets.MACOS_NOTARIZATION_PWD }}
+          MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+          MACOS_DEVELOPER_ID: ${{ secrets.MACOS_DEVELOPER_ID }}
+        run: |
+          FILENAME=${{ env.PackageFile }} 
+          DMGFILE=${FILENAME%.tar.gz}_signed.dmg  
+          DMGPATH="${{ github.workspace }}/$DMGFILE"   
+          ./compile_scripts/apple_codesigning.sh "${{ env.Package }}" "${{ env.VERSION }}_build_${{ env.SHORT_SHA }}" "$DMGPATH"
+          echo "PackageFile=${DMGFILE}" >> $GITHUB_ENV          
+          echo "Package=${DMGPATH}" >> $GITHUB_ENV
 
       - name: Save Build as Artifact
         if: github.event_name != 'release'
