@@ -136,8 +136,6 @@ jobs:
         run: |
           echo -------- compile_scripts --------
           ls -lrt compile_scripts
-          echo --------
-          ls -l ${{ env.Package }}
 
       # - name: Install Apple Certificates
       #   if: runner.os == 'macOS'
