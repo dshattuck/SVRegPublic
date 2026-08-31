@@ -58,89 +58,30 @@ try
         pp=pwd;
         cmd_str=[pp(1:end-16),'/3rdParty',pathsep,pp(1:end-16),'/MEX_Files',pathsep,pp(1:end-16),'/src'];
         addpath(cmd_str);
-
-        
-        %addpath(genpath('../src'));
-        
-        if ispc
-           try
-               mcc -m -v svreg.m
-           catch
-               disp('Dist Computing Toolbox Needs to be Disabled on Windows!!!!!! Needs to fix this!');
-               rmpath(genpath('C:\Program Files\MATLAB\R2012a\toolbox\distcomp'));
-               mcc -m -v svreg.m
-           end
-            mcc -m -v svreg_label_surf_hemi.m
-            mcc -m -v generate_stats_xls.m
-            mcc -m -v volmap_ball.m
-            mcc -m -v svreg_volreg.m
-            mcc -m -v clean_intermediate_files.m
-            mcc -m -v refine_ROIs2.m
-            mcc -m -v svreg_refinements.m
-            mcc -m -v refine_sulci_hemi.m
-            mcc -m -v register_cc_curve.m
-            mcc -m -v thicknessPVC.m
-            mcc -m -v svreg_smooth_surf_function.m
-            mcc -m -v svreg_make_atlas.m
-            mcc -m -v svreg_apply_map.m
-            mcc -m -v gui_bias_correct.m
-            mcc -m -v svreg_get_mni_tal.m
-            mcc -m -v generate_vol_param_stats_xls.m
-            mcc -m -v svreg_smooth_vol_function.m
-            mcc -m -v svreg_resample.m
-            mcc -m -v svreg_labelwith_atlas.m
-            mcc -m -v svreg_sulcal_map.m
-            mcc -m -v svreg_mni2sub.m
-            mcc -m -v svreg_thickness2atlas.m
-            mcc -m svreg_multiparc.m
-
-
-        elseif ismac || isunix
-            cmd_str=['-I ',cmd_str];
-            cmd_str = strrep(cmd_str, pathsep, ' -I ');
-            
-            mrt=matlabroot;
-            cmd_str1=[mrt,'/bin/mcc -m -v svreg.m ' cmd_str];
-            cmd_str3=[mrt,'/bin/mcc -m -v svreg_label_surf_hemi.m ' cmd_str];
-            cmd_str4=[mrt,'/bin/mcc -m -v generate_stats_xls.m ' cmd_str];
-            cmd_str5=[mrt,'/bin/mcc -m -v volmap_ball.m ' cmd_str];
-            cmd_str6=[mrt,'/bin/mcc -m -v svreg_volreg.m ' cmd_str];
-            cmd_str7=[mrt,'/bin/mcc -m -v clean_intermediate_files.m ' cmd_str];
-            cmd_str8=[mrt,'/bin/mcc -m -v refine_ROIs2.m ' cmd_str];
-            cmd_str9=[mrt,'/bin/mcc -m -v svreg_refinements.m ' cmd_str];
-            cmd_str10=[mrt,'/bin/mcc -m -v refine_sulci_hemi.m ' cmd_str];
-            cmd_str11=[mrt,'/bin/mcc -m -v register_cc_curve.m ' cmd_str];
-            cmd_str12=[mrt,'/bin/mcc -m -v thicknessPVC.m ' cmd_str];
-            cmd_str13=[mrt,'/bin/mcc -m -v svreg_smooth_surf_function.m ' cmd_str];
-            cmd_str14=[mrt,'/bin/mcc -m -v svreg_make_atlas.m ' cmd_str];
-            cmd_str15=[mrt,'/bin/mcc -m -v svreg_apply_map.m ' cmd_str];
-            cmd_str16=[mrt,'/bin/mcc -m -v gui_bias_correct.m ' cmd_str];
-            cmd_str17=[mrt,'/bin/mcc -m -v svreg_get_mni_tal.m ' cmd_str];
-            cmd_str18=[mrt,'/bin/mcc -m -v generate_vol_param_stats_xls.m ' cmd_str];
-            cmd_str19=[mrt,'/bin/mcc -m -v svreg_smooth_vol_function.m ' cmd_str];
-            cmd_str20=[mrt,'/bin/mcc -m -v svreg_resample.m ' cmd_str];
-            cmd_str21=[mrt,'/bin/mcc -m -v svreg_labelwith_atlas.m ' cmd_str];
-            cmd_str22=[mrt,'/bin/mcc -m -v svreg_sulcal_map.m ' cmd_str];
-            cmd_str23=[mrt,'/bin/mcc -m -v svreg_mni2sub.m ' cmd_str];
-            cmd_str24=[mrt,'/bin/mcc -m -v svreg_thickness2atlas.m ' cmd_str];
-            cmd_str25=[mrt,'/bin/mcc -m -v svreg_multiparc.m ' cmd_str];
-
-            
-            system(cmd_str1);
-            system(cmd_str3);system(cmd_str4);
-            system(cmd_str5);system(cmd_str6);
-            system(cmd_str7);system(cmd_str8);
-            system(cmd_str9);system(cmd_str10);
-            system(cmd_str11);system(cmd_str12);
-            system(cmd_str13);system(cmd_str14);
-            system(cmd_str15);system(cmd_str16);
-            system(cmd_str17);system(cmd_str18);
-            system(cmd_str19);system(cmd_str20);
-            system(cmd_str21);system(cmd_str22);
-            system(cmd_str23);system(cmd_str24);
-            system(cmd_str25);
-        end
-        
+        mcc -m -v svreg.m
+        mcc -m -v svreg_label_surf_hemi.m
+        mcc -m -v generate_stats_xls.m
+        mcc -m -v volmap_ball.m
+        mcc -m -v svreg_volreg.m
+        mcc -m -v clean_intermediate_files.m
+        mcc -m -v refine_ROIs2.m
+        mcc -m -v svreg_refinements.m
+        mcc -m -v refine_sulci_hemi.m
+        mcc -m -v register_cc_curve.m
+        mcc -m -v thicknessPVC.m
+        mcc -m -v svreg_smooth_surf_function.m
+        mcc -m -v svreg_make_atlas.m
+        mcc -m -v svreg_apply_map.m
+        mcc -m -v gui_bias_correct.m
+        mcc -m -v svreg_get_mni_tal.m
+        mcc -m -v generate_vol_param_stats_xls.m
+        mcc -m -v svreg_smooth_vol_function.m
+        mcc -m -v svreg_resample.m
+        mcc -m -v svreg_labelwith_atlas.m
+        mcc -m -v svreg_sulcal_map.m
+        mcc -m -v svreg_mni2sub.m
+        mcc -m -v svreg_thickness2atlas.m
+        mcc -m svreg_multiparc.m        
         disp('Compilation done.');
     end
     
