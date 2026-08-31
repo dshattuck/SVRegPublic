@@ -118,7 +118,7 @@ jobs:
         uses: matlab-actions/run-command@v3
         with:
           startup-options: -sd compile_scripts
-          command: CompileSVRegMexFiles
+          command: compile_mex
           
       - name: compile SVReg
         uses: matlab-actions/run-command@v2
