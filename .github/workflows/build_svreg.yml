@@ -66,7 +66,7 @@ jobs:
           FILENAME=svreg_${{ env.VERSION }}_build_${LOCAL_SHA}_${{ matrix.suffix }}
           echo "SHORT_SHA=${LOCAL_SHA}" >> $GITHUB_ENV
           echo "PackageFile=${FILENAME}" >> $GITHUB_ENV          
-          echo "Package=${{ github.workspace }}/packaging_tools/${FILENAME}" >> $GITHUB_ENV
+          echo "Package=${{ github.workspace }}/compile_scripts/${FILENAME}" >> $GITHUB_ENV
 
       - name: Set up MATLAB
         uses: matlab-actions/setup-matlab@v3
@@ -148,7 +148,7 @@ jobs:
       #     FILENAME=${{ env.PackageFile }} 
       #     DMGFILE=${FILENAME%.tar.gz}_signed.dmg  
       #     DMGPATH="${{ github.workspace }}/$DMGFILE"   
-      #     ./packaging_tools/apple_codesigning.sh "${{ env.Package }}" "${{ env.VERSION }}_build_${{ env.SHORT_SHA }}" "$DMGPATH"
+      #     ./compile_scripts/apple_codesigning.sh "${{ env.Package }}" "${{ env.VERSION }}_build_${{ env.SHORT_SHA }}" "$DMGPATH"
       #     echo "PackageFile=${DMGFILE}" >> $GITHUB_ENV          
       #     echo "Package=${DMGPATH}" >> $GITHUB_ENV
 
