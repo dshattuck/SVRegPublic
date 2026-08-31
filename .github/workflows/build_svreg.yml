@@ -132,12 +132,13 @@ jobs:
           command: "compile_all --package ${{ env.VERSION }}_${{ env.SHORT_SHA }}"  
 
       - name: check build
+        shell: bash
         run: |
           echo -------- compile_scripts --------
           ls -lrt compile_scripts
           echo --------
           ls -l ${{ env.Package }}
-          
+
       # - name: Install Apple Certificates
       #   if: runner.os == 'macOS'
       #   id: import_certs
@@ -178,7 +179,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "${{ env.Package }}"
-          tag: ${{ env.VERSION }}        
+          tag: "v${{ env.VERSION }}"
           allowUpdates: true
 
       - name: Go out to clean again
@@ -189,36 +190,36 @@ jobs:
           rm -rf $GITHUB_WORKSPACE/.* 2>/dev/null || true
 
   # This job executes alone ONLY after all 4 matrix compilations finish successfully
-  update_release_notes:
-    name: Update Production Release Description
-    needs: build                          # Forces this job to wait for your compilation job to finish
-    if: github.event_name == 'release'     # Only run this for true official release events
-    runs-on: ubuntu-latest
-    permissions: write-all
-    steps:
-      - name: Publish Release Notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Authenticates the native gh CLI engine
-          TAG_NAME: ${{ github.ref_name }}
-        run: |
-          CLEAN_VER="${TAG_NAME#v}"
-          MACBADGE="[![MACOS](https://img.shields.io/static/v1?label=Download&message=macOS%20Signed&color=000000&style=for-the-badge&logo=apple&logoColor=white)]"
-          LINBADGE="[![LINUX](https://img.shields.io/static/v1?label=Download&message=Linux%20x64&color=FCC624&style=for-the-badge&logo=linux&logoColor=black)]"
-          WINBADGE="[![WINDOWS](https://img.shields.io/static/v1?label=Download&message=Windows%20x64&color=0078D4&style=for-the-badge&logo=windows&logoColor=white)]"
+  # update_release_notes:
+  #   name: Update Production Release Description
+  #   needs: build                          # Forces this job to wait for your compilation job to finish
+  #   if: github.event_name == 'release'     # Only run this for true official release events
+  #   runs-on: ubuntu-latest
+  #   permissions: write-all
+  #   steps:
+  #     - name: Publish Release Notes
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Authenticates the native gh CLI engine
+  #         TAG_NAME: ${{ github.ref_name }}
+  #       run: |
+  #         CLEAN_VER="${TAG_NAME#v}"
+  #         MACBADGE="[![MACOS](https://img.shields.io/static/v1?label=Download&message=macOS%20Signed&color=000000&style=for-the-badge&logo=apple&logoColor=white)]"
+  #         LINBADGE="[![LINUX](https://img.shields.io/static/v1?label=Download&message=Linux%20x64&color=FCC624&style=for-the-badge&logo=linux&logoColor=black)]"
+  #         WINBADGE="[![WINDOWS](https://img.shields.io/static/v1?label=Download&message=Windows%20x64&color=0078D4&style=for-the-badge&logo=windows&logoColor=white)]"
 
-          echo "Compiling Markdown text block for Release ${TAG_NAME}..."
+  #         echo "Compiling Markdown text block for Release ${TAG_NAME}..."
           
 
-          read -r -d '' MARKDOWN_BODY <<EOF
-          ## Surface-constrained Volume Registration (SVReg) {CLEAN_VER} - Release Notes
+  #         read -r -d '' MARKDOWN_BODY <<EOF
+  #         ## Surface-constrained Volume Registration (SVReg) {CLEAN_VER} - Release Notes
                   
-          ### Releases                    
-          * **Windows (x64):** ${WINBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_win64.zip)
-          * **Linux (x64):** ${LINBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_linux.tar.gz)
-          * **macOS Apple Silicon (ARM64 DMG):** ${MACBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_maca64.dmg)
-          * **macOS Intel (x64 DMG):** ${MACBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_maci64.dmg)
+  #         ### Releases                    
+  #         * **Windows (x64):** ${WINBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_win64.zip)
+  #         * **Linux (x64):** ${LINBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_linux.tar.gz)
+  #         * **macOS Apple Silicon (ARM64 DMG):** ${MACBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_maca64.dmg)
+  #         * **macOS Intel (x64 DMG):** ${MACBADGE}(https://github.com{{ github.repository }}/releases/download/${TAG_NAME}/bdp_${CLEAN_VER}_maci64.dmg)
           
-          EOF
+  #         EOF
           
-          echo "Updating release page on GitHub..."
-          gh release edit "$TAG_NAME" --notes "$MARKDOWN_BODY"
+  #         echo "Updating release page on GitHub..."
+  #         gh release edit "$TAG_NAME" --notes "$MARKDOWN_BODY"
