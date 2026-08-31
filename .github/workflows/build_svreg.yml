@@ -1,7 +1,10 @@
 name: Build SVReg on GitHub Runner
 run-name: Build SVReg by @${{ github.actor }}
 
-on: [workflow_dispatch, push]
+on:
+  workflow_dispatch:
+  push:
+  release:
 env:
   DEV_VERSION: 26a_dev
   REF_NAME: ${{ github.ref_name }}  
