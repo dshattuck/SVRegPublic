@@ -48,7 +48,7 @@ for APP in ${SVREG_SOURCE_FOLDER}/bin/*.app; do
     done
 
     echo ">>> [Pre-Pass Step 3/3] Finalizing MATLAB prelaunch runtime wrapper..."
-    PRELAUNCH_PATH="${APP}p/Contents/MacOS/prelaunch"
+    PRELAUNCH_PATH="${APP}/Contents/MacOS/prelaunch"
     if [ -f "$PRELAUNCH_PATH" ]; then
         codesign --remove-signature "$PRELAUNCH_PATH" 2>/dev/null || true
         codesign --force --options runtime --entitlements "${PLIST}" --no-strict --sign "$MACOS_DEVELOPER_ID" --timestamp "$PRELAUNCH_PATH" 2>/dev/null || true
