@@ -125,7 +125,7 @@ jobs:
         uses: matlab-actions/run-command@v3
         with:
           startup-options: -sd compile_scripts
-          command: "compile_all --package ${{ env.VERSION }}${{ env.SHORT_SHA }}"  
+          command: "compile_all --package ${{ env.VERSION }}_${{ env.SHORT_SHA }}"  
 
       # - name: Install Apple Certificates
       #   if: runner.os == 'macOS'
