@@ -4,7 +4,9 @@ run-name: Build SVReg by @${{ github.actor }}
 on:
   workflow_dispatch:
   push:
+    branches: [ main ]
   release:
+    types: [ published ]
 
 env:
   DEV_VERSION: 26a_dev
