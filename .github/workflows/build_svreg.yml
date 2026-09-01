@@ -22,7 +22,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            enable_cache: false
+            enable_cache: true
             suffix: linux.tar.gz
           - os: windows-latest
             enable_cache: true
