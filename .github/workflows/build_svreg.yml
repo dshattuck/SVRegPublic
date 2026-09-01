@@ -83,6 +83,32 @@ jobs:
             Medical_Imaging_Toolbox
             Parallel_Computing_Toolbox
 
+      - name: Minimize MATLAB Caching Footprint
+        if: runner.os != 'Windows'
+        run: |
+          MATLAB_ROOT=$(dirname $(dirname $(which matlab)))
+          
+          # Remove the heavy HTML documentation files (saves ~1GB+)
+          rm -rf "$MATLAB_ROOT/help"
+          
+          # Strip out all extra localization folders while preserving the core system files
+          find "$MATLAB_ROOT/toolbox/local" -mindepth 1 -maxdepth 1 -type d ! -name "pathdef.m" -exec rm -rf {} +
+        shell: bash
+
+      - name: Minimize MATLAB Caching Footprint (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $MatlabBin = Get-Command matlab | Select-Object -ExpandProperty Source
+          $MatlabRoot = Split-Path (Split-Path $MatlabBin -Parent) -Parent
+          
+          if (Test-Path "$MatlabRoot\help") { Remove-Item -Path "$MatlabRoot\help" -Recurse -Force }
+          
+          # Remove extra regional folders, leaving only the primary system layout
+          Get-ChildItem -Path "$MatlabRoot\toolbox\local" -Directory | 
+            Where-Object { $_.Name -notmatch "en_US|en" } | 
+            Remove-Item -Recurse -Force
+        shell: powershell
+                    
       - name: setup MSVC compiler
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
@@ -187,6 +213,7 @@ jobs:
           rm -rf $GITHUB_WORKSPACE/*
           rm -rf $GITHUB_WORKSPACE/.* 2>/dev/null || true
 
+
   # This job executes alone ONLY after all 4 matrix compilations finish successfully
   update_release_notes:
     name: Update Production Release Description
@@ -201,10 +228,6 @@ jobs:
           TAG_NAME: ${{ github.ref_name }}
         run: |
           CLEAN_VER="${TAG_NAME#v}"
-          # MACBADGE="[![MACOS](https://img.shields.io/static/v1?label=Download&message=macOS%20Signed&color=000000&style=for-the-badge&logo=apple&logoColor=white)]"
-          # LINBADGE="[![LINUX](https://img.shields.io/static/v1?label=Download&message=Linux%20x64&color=FCC624&style=for-the-badge&logo=linux&logoColor=black)]"
-          # WINBADGE="[![WINDOWS](https://img.shields.io/static/v1?label=Download&message=Windows%20x64&color=0078D4&style=for-the-badge&logo=windows&logoColor=white)]"
-
           echo "Compiling Markdown text block for Release ${TAG_NAME}..."
           
 
