@@ -128,8 +128,8 @@ jobs:
         working-directory: 3rdParty
         run: |
           install -d AIR_bin
-          g++ -Llib/linux warp_points.cpp -lRPW -lm -O3 -o AIR_bin/warp_points_linux
-          g++ -Llib/linux warp_coord_vol.cpp -lRPW -lm -O3 -o AIR_bin/warp_coord_vol_linux
+          g++ -Llib/linux -static-libstdc++ -static-libgcc warp_points.cpp -lRPW -lm -O3 -o AIR_bin/warp_points_linux
+          g++ -Llib/linux -static-libstdc++ -static-libgcc warp_coord_vol.cpp -lRPW -lm -O3 -o AIR_bin/warp_coord_vol_linux
         
       - name: compile SVReg Mex files
         uses: matlab-actions/run-command@v3
