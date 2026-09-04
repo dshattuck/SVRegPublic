@@ -98,26 +98,40 @@ jobs:
       # - name: setup MSVC compiler
       #   if: runner.os == 'Windows'
       #   uses: ilammy/msvc-dev-cmd@v1
-
       - name: Initialize Workstation MSVC Environment
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          # 1. Dynamically identify the VS installation root folder
           $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
           $vsPath = & $vswhere -latest -property installationPath
-          $devShellModule = Join-Path $vsPath "Common7\Tools\Microsoft.VisualStudio.DevShell.Powershell.dll"
-          Import-Module $devShellModule
+          
+          # 2. Locate the DevShell module path dynamically (handles VS2022 and VS2026 layouts)
+          $modulePath = Get-ChildItem -Path $vsPath -Filter "Microsoft.VisualStudio.DevShell.Powershell.dll" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          
+          if (-not $modulePath) {
+              Throw "Could not find Microsoft.VisualStudio.DevShell.Powershell.dll under $vsPath"
+          }
+          
+          # 3. Import the module using its discovered location
+          Import-Module $modulePath.FullName
+          
+          # 4. Trigger the native environment injection into memory
           Enter-VsDevShell -VsInstallPath $vsPath -SkipAutomaticLocation -DevCmdArguments "-arch=x64"
+          
+          # 5. Filtered Whitelist Export: Only populate core compilation keys to your GITHUB_ENV
           Get-ChildItem env: | ForEach-Object {
               $name = $_.Name
-              $value = $_.Value              
+              $value = $_.Value
+              
               if ($name -eq "Path") {
                   echo "PATH=$value" >> $env:GITHUB_ENV
               }
-              elseif ($name -match "^(INCLUDE|LIB|LIBPATH|DevEnvDir|ExtensionSdkDir|Framework|FxCop|NETFXKits|WindowsSDK|VC|VS|UniversalCRT)") {
+              elseif ($name -match "^(INCLUDE|LIB|LIBPATH)$") {
                   echo "$name=$value" >> $env:GITHUB_ENV
               }
           }
+
 
               
       - name: build Windows air programs
