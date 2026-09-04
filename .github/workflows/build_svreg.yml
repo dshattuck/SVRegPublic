@@ -95,28 +95,10 @@ jobs:
           fi
         shell: bash            
 
-      # - name: setup MSVC compiler
-      #   if: runner.os == 'Windows'
-      #   uses: ilammy/msvc-dev-cmd@v1
-
-      
-      - name: Initialize Workstation MSVC Environment
+      - name: setup MSVC compiler
         if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          :: 1. Find Visual Studio dynamically via the runner's pre-installed vswhere.exe
-          for /f "usebackq tokens=*" %%i in (`vswhere.exe -latest -property installationPath`) do set "VS_PATH=%%i"
-          
-          :: 2. Initialize MSVC and dump the core variables directly to GitHub's persistent runner file
-          call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" -arch=x64 && (
-            echo INCLUDE=%INCLUDE%>> %GITHUB_ENV%
-            echo LIB=%LIB%>> %GITHUB_ENV%
-            echo LIBPATH=%LIBPATH%>> %GITHUB_ENV%
-            echo PATH=%PATH%>> %GITHUB_ENV%
-          )
-
-
-              
+        uses: ilammy/msvc-dev-cmd@v1
+            
       - name: build Windows air programs
         if: runner.os == 'Windows'
         working-directory: 3rdParty
