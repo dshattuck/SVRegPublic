@@ -103,32 +103,43 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
-          $vcvars = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
+          # 1. Dynamically locate the Visual Studio installation root via the system registry
+          $vsKey = Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7" -ErrorAction SilentlyContinue
+          if (-not $vsKey) { $vsKey = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" }
+          $vsPath = $vsKey."17.0"  # "17.0" represents Visual Studio 2022
           
-          # Force the raw string to pass to cmd without PowerShell stripping the internal quotes
-          $envLines = Start-Process cmd -ArgumentList "/c `"`"$vcvars`" x64 && set`"" -NoNewWindow -RedirectStandardOutput [string]::new -Wait
+          # 2. Extract the exact Build Tools/MSVC directory paths directly
+          $msvcToolsRoot = Join-Path $vsPath "VC\Tools\MSVC"
+          $latestVersion = (Get-ChildItem $msvcToolsRoot | Sort-Object Name -Descending | Select-Object -First 1).Name
+          $compilerBinDir = Join-Path $msvcToolsRoot "$latestVersion\bin\Hostx64\x64"
           
-          foreach ($line in $envLines -split "`r`n") {
-              if ($line -match "^([^=]+)=(.*)$") {
-                  $name = $Matches[1]
-                  $value = $Matches[2]
-                  
-                  if ($name -eq "Path") {
-                      $oldPaths = $env:Path -split ';'
-                      $newPaths = $value -split ';'
-                      $uniqueNew = @()
-                      foreach ($p in $newPaths) {
-                          if ($p -and ($oldPaths -notcontains $p)) { $uniqueNew += $p }
-                      }
-                      if ($uniqueNew.Count -gt 0) {
-                          echo "PATH=$( ($uniqueNew + $oldPaths) -join ';' )" >> $env:GITHUB_ENV
-                      }
-                  }
-                  elseif ($name -match "^(INCLUDE|LIB|LIBPATH|DevEnvDir|ExtensionSdkDir|Framework|FxCop|NETFXKits|WindowsSDK|VC|VS|UniversalCRT)") {
-                      echo "$name=$value" >> $env:GITHUB_ENV
-                  }
-              }
+          # 3. Locate the companion Windows SDK paths dynamically
+          $sdkKey = Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0"
+          $sdkRoot = $sdkKey.InstallationFolder
+          $sdkVersion = $sdkKey.ProductVersion
+          if ($sdkVersion -and -not ($sdkVersion.EndsWith(".0"))) { $sdkVersion = "$sdkVersion.0" }
+          
+          # 4. Synthesize paths directly to the GitHub PATH variable without invoking cmd execution
+          $newPaths = @(
+              $compilerBinDir,
+              (Join-Path $vsPath "Common7\IDE"),
+              (Join-Path $sdkRoot "bin\$sdkVersion\x64")
+          )
+          
+          # 5. Prepend them safely to your runner path
+          $oldPaths = $env:Path -split ';'
+          $uniqueNew = @()
+          foreach ($p in $newPaths) {
+              if ($p -and ($oldPaths -notcontains $p)) { $uniqueNew += $p }
           }
+          if ($uniqueNew.Count -gt 0) {
+              echo "PATH=$( ($uniqueNew + $oldPaths) -join ';' )" >> $env:GITHUB_ENV
+          }
+          
+          # 6. Inject the essential compilation directories required by cl.exe
+          echo "INCLUDE=$(Join-Path $msvcToolsRoot "$latestVersion\include");$(Join-Path $sdkRoot "Include\$sdkVersion\ucrt");$(Join-Path $sdkRoot "Include\$sdkVersion\um");$(Join-Path $sdkRoot "Include\$sdkVersion\shared")" >> $env:GITHUB_ENV
+          echo "LIB=$(Join-Path $msvcToolsRoot "$latestVersion\lib\x64");$(Join-Path $sdkRoot "Lib\$sdkVersion\ucrt\x64");$(Join-Path $sdkRoot "Lib\$sdkVersion\um\x64")" >> $env:GITHUB_ENV
+
 
               
       - name: build Windows air programs
