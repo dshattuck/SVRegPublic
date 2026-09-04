@@ -103,14 +103,30 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
-          $vcvars = 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat'
-          # Fix: Use single quotes for the outer string so cmd gets the literal double quotes
-          $envLines = cmd /c "`"$($vcvars)`" x64 && set"
-          foreach ($line in $envLines) {
+          $vcvars = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
+          
+          # Force the raw string to pass to cmd without PowerShell stripping the internal quotes
+          $envLines = Start-Process cmd -ArgumentList "/c `"`"$vcvars`" x64 && set`"" -NoNewWindow -RedirectStandardOutput [string]::new -Wait
+          
+          foreach ($line in $envLines -split "`r`n") {
               if ($line -match "^([^=]+)=(.*)$") {
                   $name = $Matches[1]
                   $value = $Matches[2]
-                  echo "$name=$value" >> $env:GITHUB_ENV
+                  
+                  if ($name -eq "Path") {
+                      $oldPaths = $env:Path -split ';'
+                      $newPaths = $value -split ';'
+                      $uniqueNew = @()
+                      foreach ($p in $newPaths) {
+                          if ($p -and ($oldPaths -notcontains $p)) { $uniqueNew += $p }
+                      }
+                      if ($uniqueNew.Count -gt 0) {
+                          echo "PATH=$( ($uniqueNew + $oldPaths) -join ';' )" >> $env:GITHUB_ENV
+                      }
+                  }
+                  elseif ($name -match "^(INCLUDE|LIB|LIBPATH|DevEnvDir|ExtensionSdkDir|Framework|FxCop|NETFXKits|WindowsSDK|VC|VS|UniversalCRT)") {
+                      echo "$name=$value" >> $env:GITHUB_ENV
+                  }
               }
           }
 
